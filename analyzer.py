@@ -1,6 +1,6 @@
 import streamlit as st
 import pandas as pd
-import matplotlib.pyplot as plt
+import plotly.express as px
 
 st.title("Symptom Analysis Dashboard")
 
@@ -22,45 +22,33 @@ if uploaded_file:
     symptom_data['symptom_type'] = symptom_data['detail'].str.extract(r'([a-zA-Z]+)')[0]
     
     # Group by date and symptom type, summing the 'rating/amount'
-    symptom_scores = symptom_data.groupby(['date formatted', 'symptom_type'])['rating/amount'].sum().unstack(fill_value=0)
+    symptom_scores = symptom_data.groupby(['date formatted', 'symptom_type'])['rating/amount'].sum().reset_index()
     
     # Dynamically get a list of symptoms in the file
-    all_symptoms = list(symptom_scores.columns)
+    all_symptoms = symptom_scores['symptom_type'].unique()
     
     # Step 3: User selects symptoms to display
     st.sidebar.header("Select Symptoms to Display")
-    selected_symptoms = []
-    for symptom in all_symptoms:
-        if st.sidebar.checkbox(symptom, value=True):  # Default to checked
-            selected_symptoms.append(symptom)
+    selected_symptoms = st.sidebar.multiselect("Symptoms", options=all_symptoms, default=list(all_symptoms))
     
-    # Filter the symptom data based on selections
-    symptom_scores_filtered = symptom_scores[selected_symptoms]
+    # Filter the data based on selected symptoms
+    symptom_scores_filtered = symptom_scores[symptom_scores['symptom_type'].isin(selected_symptoms)]
     
-    # Step 4: Plot the data
+    # Step 4: Plot the data using Plotly
     st.subheader("Symptom Score Over Time")
     
-    plt.figure(figsize=(12, 6))
-    ax = plt.gca()
+    # Plotly line chart
+    fig = px.line(
+        symptom_scores_filtered, 
+        x="date formatted", 
+        y="rating/amount", 
+        color="symptom_type",
+        title="Symptom Score Over Time by Selected Symptom Types",
+        labels={"date formatted": "Date", "rating/amount": "Symptom Score"},
+    )
     
-    # Plot each selected symptom type individually with markers for clarity
-    for symptom_type in symptom_scores_filtered.columns:
-        symptom_scores_filtered[symptom_type].plot(
-            kind='line',
-            ax=ax,
-            marker='o',
-            linestyle='-',
-            linewidth=1.5,
-            label=symptom_type
-        )
-    
-    plt.title("Symptom Score Over Time by Selected Symptom Types")
-    plt.xlabel("Date")
-    plt.ylabel("Symptom Score")
-    plt.legend(title='Symptom Type', loc='upper left', bbox_to_anchor=(1, 1))
-    plt.grid(True)
-    plt.tight_layout()
-    
-    st.pyplot(plt)
+    # Show the plot in Streamlit
+    st.plotly_chart(fig, use_container_width=True)
+
 else:
     st.write("Please upload a CSV file to see the analysis.")
