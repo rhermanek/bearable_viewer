@@ -30,7 +30,7 @@ If you prefer running this project locally, follow these steps:
 
 1. **Clone the repository**:
     ```bash
-    git clone https://github.com/yourusername/bearable-viewer.git
+    git clone https://github.com/rhermanek/bearable_viewer.git
     ```
 2. **Install dependencies**:
     ```bash
